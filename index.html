@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Job Form</title>
+</head>
+
+<body onload="onLoad()">
+
+    <form>
+        <label for="did">DID:</label>
+        <input type="text" id="did" name="did" required>
+        <br>
+
+        <label for="jobName">Job Name:</label>
+        <input type="text" id="jobName" name="jobName" required>
+        <br>
+
+        <button id="idButton" type="button" >Create a Job</button>
+    </form>
+
+    <script>
+
+        import { Web5 } from "@web5/api";
+        import protocolDefinition from "./assets/protocol.json";
+function onLoad(){
+    document.getElementById("idButton").onclick=async() => {
+
+            const { web5, did: myDID } = await Web5.connect();
+
+            const configureProtocol = async (protocolDefinition) => {
+                // query the list of existing protocols on the DWN
+                const { protocols, status } = await web5.dwn.protocols.query({
+                    message: {
+                        filter: {
+                            protocol: protocolDefinition.protocol,
+                        }
+                    }
+                });
+
+                if (status.code !== 200) {
+                    alert('Error querying protocols');
+                    console.error('Error querying protocols', status);
+                    return;
+                }
+
+                // if the protocol already exists, we return
+                if (protocols.length > 0) {
+                    console.log('Protocol already exists');
+                    return;
+                }
+
+                // configure protocol on local DWN
+                const { status: configureStatus, protocol } = await web5.dwn.protocols.configure({
+                    message: {
+                        definition: protocolDefinition,
+                    }
+                });
+            }
+
+            await configureProtocol(protocolDefinition);
+
+            console.log(myDID);
+            const jobData = {
+                "@type": "job",
+                "title": document.getElementById("jobName").value,
+                "description": document.getElementById("jobName").value,
+                "author": myDID,
+            }
+
+            const response = await web5.dwn.records.create({
+                data: jobData,
+                message: {
+                    protocol: protocolDefinition.protocol,
+                    protocolPath: "job",
+                    schema: protocolDefinition.types.job.schema,
+                    dataFormat: protocolDefinition.types.job.dataFormats[0]
+                }
+            });
+
+            console.log(response.status);
+            const ruben_did = `did:ion:EiDT-8PAF_S18ikJvjhxHY9nHedI8UughfUM7obrkKfe7g:eyJkZWx0YSI6eyJwYXRjaGVzIjpbeyJhY3Rpb24iOiJyZXBsYWNlIiwiZG9jdW1lbnQiOnsicHVibGljS2V5cyI6W3siaWQiOiJkd24tc2lnIiwicHVibGljS2V5SndrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiSXMzYUcyLWJLQW5fbW12MHdnMURLU2VxM1hkZFRRQkhiMGVka3RaVFRoayJ9LCJwdXJwb3NlcyI6WyJhdXRoZW50aWNhdGlvbiJdLCJ0eXBlIjoiSnNvbldlYktleTIwMjAifSx7ImlkIjoiZHduLWVuYyIsInB1YmxpY0tleUp3ayI6eyJjcnYiOiJzZWNwMjU2azEiLCJrdHkiOiJFQyIsIngiOiJaMFdWX29JQkwwOWk2b1JzQzI4bnFLNi1MRjZBaFZyQWdfYi05a1dXM2xzIiwieSI6Im9qLVlFLWw2aDJvLS1xN0QzVDRLRUhXOEpCSmNnRWdRZFJBbE9majVmS00ifSwicHVycG9zZXMiOlsia2V5QWdyZWVtZW50Il0sInR5cGUiOiJKc29uV2ViS2V5MjAyMCJ9XSwic2VydmljZXMiOlt7ImlkIjoiZHduIiwic2VydmljZUVuZHBvaW50Ijp7ImVuY3J5cHRpb25LZXlzIjpbIiNkd24tZW5jIl0sIm5vZGVzIjpbImh0dHBzOi8vZHduLnRiZGRldi5vcmcvZHduMyIsImh0dHBzOi8vZHduLnRiZGRldi5vcmcvZHduNSJdLCJzaWduaW5nS2V5cyI6WyIjZHduLXNpZyJdfSwidHlwZSI6IkRlY2VudHJhbGl6ZWRXZWJOb2RlIn1dfX1dLCJ1cGRhdGVDb21taXRtZW50IjoiRWlEbkhfLUUxMTRUendrNUhCSkNiYktPVUViclh3ZXlRaFN0NXBWY1pQUDJUdyJ9LCJzdWZmaXhEYXRhIjp7ImRlbHRhSGFzaCI6IkVpQkp4bVRHM3RGTFp1X2tCNjNsU1JhblNEeUowbXpKeDJnVm02a29PRTB1Z2ciLCJyZWNvdmVyeUNvbW1pdG1lbnQiOiJFaUJqSmJkdFRUM0xKNmhpSlQzRE1FSzZQNjNMSngwUzBKc05YbHdJVUtQaFJnIn19`
+
+            //@ts-ignore
+            const status123456 = await response.record.send(document.getElementById("did").value); // send the newly generated record to Bob's DWeb Nodes
+
+            console.log(status123456.status);
+
+        };
+    }
+    </script>
+
+</body>
+
+</html>
